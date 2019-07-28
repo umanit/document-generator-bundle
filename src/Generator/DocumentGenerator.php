@@ -9,6 +9,7 @@ use LogicException;
 use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Umanit\DocumentGeneratorBundle\Exception\DocumentGeneratorException;
 
 /**
@@ -98,78 +99,85 @@ class DocumentGenerator
      * Generates a PNG from an URL.
      * Returns the binary string as a response.
      *
-     * @param string $url URL used to generate the document.
+     * @param string $url     URL used to generate the document.
+     * @param array  $options Options to give to the API.
      *
      * @return string
      * @throws DocumentGeneratorException
      */
-    public function generatePngFromUrl(string $url): string
+    public function generatePngFromUrl(string $url, array $options = []): string
     {
-        return $this->process(self::GET_PNG, self::FROM_URL, $url);
+        return $this->generate(self::GET_PNG, self::FROM_URL, $url, $options);
     }
 
     /**
      * Generates a PNG from a HTML string.
      * Returns the binary string as a response.
      *
-     * @param string $html   HTML code used to generate the document.
-     * @param bool   $encode Indicates if the HTML code should be encoded before sending.
+     * @param string $html    HTML code used to generate the document.
+     * @param array  $options Options to give to the API.
      *
      * @return string
      * @throws DocumentGeneratorException
      */
-    public function generatePngFromHtml(string $html, bool $encode = false): string
+    public function generatePngFromHtml(string $html, array $options = []): string
     {
-        if ($encode) {
-            $html = $this->encodeHtml($html);
-        }
-
-        return $this->process(self::GET_PNG, self::FROM_HTML, $html);
+        return $this->generate(self::GET_PNG, self::FROM_HTML, $html, $options);
     }
 
     /**
      * Generates a PDF from an URL.
      * Returns the binary string as a response.
      *
-     * @param string $url URL used to generate the document.
+     * @param string $url     URL used to generate the document.
+     * @param array  $options Options to give to the API.
      *
      * @return string
      * @throws DocumentGeneratorException
      */
-    public function generatePdfFromUrl(string $url): string
+    public function generatePdfFromUrl(string $url, array $options = []): string
     {
-        return $this->process(self::GET_PDF, self::FROM_URL, $url);
+        return $this->generate(self::GET_PDF, self::FROM_URL, $url, $options);
     }
 
     /**
      * Generates a PDF from a HTML string.
      * Returns the binary string as a response.
      *
-     * @param string $html   HTML code used to generate the document.
-     * @param bool   $encode Indicates if the HTML code should be encoded before sending.
+     * @param string $html    HTML code used to generate the document.
+     * @param array  $options Options to give to the API.
      *
      * @return string
      * @throws DocumentGeneratorException
      */
-    public function generatePdfFromHtml(string $html, bool $encode = false): string
+    public function generatePdfFromHtml(string $html, array $options = []): string
     {
-        if ($encode) {
-            $html = $this->encodeHtml($html);
-        }
-
-        return $this->process(self::GET_PDF, self::FROM_URL, $html);
+        return $this->generate(self::GET_PDF, self::FROM_URL, $html, $options);
     }
 
     /**
-     * Encodes the HTML before send.
+     * Processes options passed to the generator.
      *
-     * @param string $html
+     * @param array $options
      *
-     * @return string
+     * @return array
      */
-    private function encodeHtml(string $html): string
+    private function processOptions(array $options): array
     {
-        return base64_encode($html);
+        $resolver = new OptionsResolver();
+
+        $resolver
+            ->setDefaults([
+                'decode'      => false,
+                'pageOptions' => [],
+                'scenario'    => null,
+            ])
+            ->setAllowedTypes('decode', 'bool')
+            ->setAllowedTypes('pageOptions', 'array')
+            ->setAllowedTypes('scenario', ['null', 'string'])
+        ;
+
+        return $resolver->resolve($options);
     }
 
     /**
@@ -178,19 +186,21 @@ class DocumentGenerator
      * @param string $type           Type of document to generate.
      * @param string $urlOrHtmlKey   "url" or "html" depending on the source of the document to generate.
      * @param string $urlOrHtmlValue Source of the document to generate.
+     * @param array  $options        Options to give to the API.
      *
      * @return string
      * @throws DocumentGeneratorException if something went wrong.
      */
-    private function process(string $type, string $urlOrHtmlKey, string $urlOrHtmlValue): string
+    private function generate(string $type, string $urlOrHtmlKey, string $urlOrHtmlValue, array $options = []): string
     {
         try {
+            $options     = $this->processOptions($options);
             $contentType = 'application/json';
             $endpoint    = '/';
-            $message     = json_encode([
+            $message     = json_encode(array_merge($options, [
                 'type'        => $type,
                 $urlOrHtmlKey => $urlOrHtmlValue,
-            ]);
+            ]));
 
             if ($this->encryptData) {
                 $contentType = 'text/plain';
