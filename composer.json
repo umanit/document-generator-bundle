@@ -4,12 +4,14 @@
     "type": "symfony-bundle",
     "homepage": "https://github.com/umanit/document-generator-bundle",
     "require": {
-        "php": ">=7.2",
+        "php": ">=7.1",
         "ext-openssl": "*",
         "ext-json": "*",
+        "psr/http-message": "^1.0",
+        "php-http/httplug": "^2.0",
+        "php-http/message-factory": "^1.0",
         "php-http/discovery": "^1.7",
-        "php-http/message": "^1.7",
-        "symfony/options-resolver": "^4.3"
+        "symfony/options-resolver": "^3.4|^4.3"
     },
     "provide": {
         "php-http/client-implementation": "^1.0"

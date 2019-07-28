@@ -4,6 +4,7 @@ namespace Umanit\DocumentGeneratorBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
+use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * Class Configuration
@@ -15,9 +16,15 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('umanit_document_generator');
+        if (3 <= Kernel::MAJOR_VERSION) {
+            $treeBuilder = new TreeBuilder();
+            $root        = $treeBuilder->root('umanit_document_generator');
+        } else {
+            $treeBuilder = new TreeBuilder('umanit_document_generator');
+            $root        = $treeBuilder->getRootNode();
+        }
 
-        $treeBuilder->getRootNode()
+        $root
             ->children()
                 ->scalarNode('base_uri')
                     ->isRequired()
