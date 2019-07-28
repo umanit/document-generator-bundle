@@ -7,7 +7,11 @@
         "php": ">=7.2",
         "ext-openssl": "*",
         "ext-json": "*",
-        "symfony/http-client": "^4.3"
+        "php-http/discovery": "^1.7",
+        "php-http/message": "^1.7"
+    },
+    "provide": {
+        "php-http/client-implementation": "^1.0"
     },
     "license": "MIT",
     "authors": [

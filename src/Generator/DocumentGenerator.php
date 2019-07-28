@@ -2,11 +2,13 @@
 
 namespace Umanit\DocumentGeneratorBundle\Generator;
 
+use Http\Discovery\HttpClientDiscovery;
+use Http\Discovery\MessageFactoryDiscovery;
+use Http\Message\MessageFactory;
 use LogicException;
+use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Umanit\DocumentGeneratorBundle\Exception\DocumentGeneratorException;
 
 /**
@@ -29,8 +31,11 @@ class DocumentGenerator
     /** @var string */
     private const FROM_HTML = 'html';
 
-    /** @var HttpClientInterface */
+    /** @var ClientInterface */
     private $client;
+
+    /** @var MessageFactory */
+    private $messageFactory;
 
     /** @var string */
     private $apiBaseUri;
@@ -60,6 +65,26 @@ class DocumentGenerator
     }
 
     /**
+     * Define a custom ClientInterface.
+     *
+     * @param ClientInterface|null $client
+     */
+    public function setClient(ClientInterface $client = null): void
+    {
+        $this->client = $client;
+    }
+
+    /**
+     * Define a cusotm MessageFactory;
+     *
+     * @param MessageFactory|null $messageFactory
+     */
+    public function setMessageFactory(MessageFactory $messageFactory = null): void
+    {
+        $this->messageFactory = $messageFactory;
+    }
+
+    /**
      * Indicates if data should be encrypted before send.
      *
      * @param bool $flag
@@ -67,20 +92,6 @@ class DocumentGenerator
     public function encryptData(bool $flag): void
     {
         $this->encryptData = $flag;
-    }
-
-    /**
-     * Gets the HttpClient used to call the API.
-     *
-     * @return HttpClientInterface
-     */
-    public function getClient(): HttpClientInterface
-    {
-        if (null === $this->client) {
-            $this->client = $this->getDefaultClient();
-        }
-
-        return $this->client;
     }
 
     /**
@@ -187,19 +198,18 @@ class DocumentGenerator
                 $message     = $this->encrypt($message);
             }
 
-            $client   = $this->getClient();
-            $response = $client->request('POST', $endpoint, [
-                'headers' => [
-                    'Content-Type' => $contentType,
-                ],
-                'body'    => $message,
-            ]);
+            $client         = $this->getClient();
+            $messageFactory = $this->getMessageFactory();
+            $request        = $messageFactory->createRequest('POST', $this->getFullUrl($endpoint), [
+                'Content-Type' => $contentType,
+            ], $message);
+            $response       = $client->sendRequest($request);
 
             if (200 !== $response->getStatusCode()) {
                 throw new DocumentGeneratorException('Invalid response code.');
             }
 
-            return $response->getContent();
+            return $response->getBody()->getContents();
         } catch (\Exception $e) {
             $this->logException($e);
 
@@ -243,17 +253,31 @@ class DocumentGenerator
     }
 
     /**
-     * Instanciate the default HTTP client used to call the API.
+     * Gets the ClientInterface used to call the API.
      *
-     * @return HttpClientInterface
+     * @return ClientInterface
      */
-    private function getDefaultClient(): HttpClientInterface
+    private function getClient(): ClientInterface
     {
-        $httpClient = HttpClient::create([
-            'base_uri' => $this->apiBaseUri,
-        ]);
+        if (null === $this->client) {
+            $this->client = HttpClientDiscovery::find();
+        }
 
-        return $httpClient;
+        return $this->client;
+    }
+
+    /**
+     * Gets the MessageFactory used to create the RequestInterface.
+     *
+     * @return MessageFactory
+     */
+    private function getMessageFactory(): MessageFactory
+    {
+        if (null === $this->messageFactory) {
+            $this->messageFactory = MessageFactoryDiscovery::find();
+        }
+
+        return $this->messageFactory;
     }
 
     /**
@@ -268,5 +292,17 @@ class DocumentGenerator
         }
 
         $this->logger->error($e->getMessage());
+    }
+
+    /**
+     * Get the full URL to call.
+     *
+     * @param string $url
+     *
+     * @return string
+     */
+    private function getFullUrl(string $url): string
+    {
+        return $this->apiBaseUri.'/'.ltrim($url, '/');
     }
 }
