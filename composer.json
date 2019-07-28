@@ -8,7 +8,8 @@
         "ext-openssl": "*",
         "ext-json": "*",
         "php-http/discovery": "^1.7",
-        "php-http/message": "^1.7"
+        "php-http/message": "^1.7",
+        "symfony/options-resolver": "^4.3"
     },
     "provide": {
         "php-http/client-implementation": "^1.0"
