@@ -210,7 +210,7 @@ class DocumentGenerator
         } catch (\Exception $e) {
             $this->logException($e);
 
-            throw new DocumentGeneratorException($e->getMessage(), $e->getCode());
+            throw new DocumentGeneratorException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
