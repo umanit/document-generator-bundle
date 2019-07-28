@@ -75,7 +75,7 @@ class DocumentGenerator
     }
 
     /**
-     * Define a cusotm MessageFactory;
+     * Define a custom MessageFactory.
      *
      * @param MessageFactory|null $messageFactory
      */

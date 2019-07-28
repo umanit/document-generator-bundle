@@ -25,7 +25,7 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode('encryption_key')
                     ->defaultNull()
-                    ->info('Key used to crypt message before calling the API. It must match the one defined in the API.')
+                    ->info('Key used to crypt message before calling the API. It must match the one defined in the micro-service.')
                 ->end()
             ->end()
         ;
