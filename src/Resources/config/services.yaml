@@ -1,0 +1,8 @@
+services:
+    umanit_document_generator.document_generator:
+        class: Umanit\DocumentGeneratorBundle\Generator\DocumentGenerator
+        arguments:
+            - '%umanit_document_generator.base_uri%'
+            - '%umanit_document_generator.encryption_key%'
+            - '@?logger'
+    Umanit\DocumentGeneratorBundle\Generator\DocumentGenerator: '@umanit_document_generator.document_generator'
