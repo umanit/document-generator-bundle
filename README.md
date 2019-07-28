@@ -7,6 +7,11 @@ https://github.com/umanit/microservice-document-generator
 
 `$ composer require umanit/document-generator-bundle`
 
+The bundle relies on HTTPlug to perform HTTP requests, so you will need to install a client implementation to use it.
+For example, the following will use the cURL client.
+
+`$ composer require php-http/curl-client guzzlehttp/psr7 php-http/message`
+
 ## Configuration
 
 * `umanit_document_generator.base_uri`: Base URI of the API used to generate documents.
