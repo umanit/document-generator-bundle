@@ -1,0 +1,22 @@
+{
+    "name": "umanit/document-generator-bundle",
+    "description": "This bundle is used to drive the document generator microservice developed by UmanIT: https://github.com/umanit/microservice-document-generator",
+    "type": "symfony-bundle",
+    "homepage": "https://github.com/umanit/document-generator-bundle",
+    "require": {
+        "php": ">=7.2"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "DjLeChuck",
+            "email": "djlechuck@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Umanit\\DocumentGeneratorBundle\\": "src/"
+        }
+    }
+}
