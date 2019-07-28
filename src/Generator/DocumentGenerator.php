@@ -2,9 +2,9 @@
 
 namespace Umanit\DocumentGeneratorBundle\Generator;
 
+use Http\Client\Common\HttpMethodsClient;
 use Http\Discovery\HttpClientDiscovery;
 use Http\Discovery\MessageFactoryDiscovery;
-use Http\Message\MessageFactory;
 use LogicException;
 use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
@@ -34,9 +34,6 @@ class DocumentGenerator
 
     /** @var ClientInterface */
     private $client;
-
-    /** @var MessageFactory */
-    private $messageFactory;
 
     /** @var string */
     private $apiBaseUri;
@@ -73,16 +70,6 @@ class DocumentGenerator
     public function setClient(ClientInterface $client = null): void
     {
         $this->client = $client;
-    }
-
-    /**
-     * Define a custom MessageFactory.
-     *
-     * @param MessageFactory|null $messageFactory
-     */
-    public function setMessageFactory(MessageFactory $messageFactory = null): void
-    {
-        $this->messageFactory = $messageFactory;
     }
 
     /**
@@ -208,8 +195,8 @@ class DocumentGenerator
                 $message     = $this->encrypt($message);
             }
 
-            $client         = $this->getClient();
-            $messageFactory = $this->getMessageFactory();
+            $client         = HttpClientDiscovery::find();
+            $messageFactory = MessageFactoryDiscovery::find();
             $request        = $messageFactory->createRequest('POST', $this->getFullUrl($endpoint), [
                 'Content-Type' => $contentType,
             ], $message);
@@ -260,34 +247,6 @@ class DocumentGenerator
         $ivHex         = bin2hex($iv);
 
         return "$ivHex:$ciphertextHex";
-    }
-
-    /**
-     * Gets the ClientInterface used to call the API.
-     *
-     * @return ClientInterface
-     */
-    private function getClient(): ClientInterface
-    {
-        if (null === $this->client) {
-            $this->client = HttpClientDiscovery::find();
-        }
-
-        return $this->client;
-    }
-
-    /**
-     * Gets the MessageFactory used to create the RequestInterface.
-     *
-     * @return MessageFactory
-     */
-    private function getMessageFactory(): MessageFactory
-    {
-        if (null === $this->messageFactory) {
-            $this->messageFactory = MessageFactoryDiscovery::find();
-        }
-
-        return $this->messageFactory;
     }
 
     /**
