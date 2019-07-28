@@ -139,7 +139,7 @@ class DocumentGenerator
      */
     public function generatePdfFromHtml(string $html, array $options = []): string
     {
-        return $this->generate(self::GET_PDF, self::FROM_URL, $html, $options);
+        return $this->generate(self::GET_PDF, self::FROM_HTML, $html, $options);
     }
 
     /**
