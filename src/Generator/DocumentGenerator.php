@@ -207,7 +207,7 @@ class DocumentGenerator
             }
 
             return $response->getBody()->getContents();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logException($e);
 
             throw new DocumentGeneratorException($e->getMessage(), $e->getCode(), $e);
@@ -238,7 +238,7 @@ class DocumentGenerator
 
         try {
             $iv = random_bytes($ivSize);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new RuntimeException('Can not generate IV.');
         }
 
@@ -252,9 +252,9 @@ class DocumentGenerator
     /**
      * Log the exception if the logger is defined.
      *
-     * @param \Exception $e
+     * @param \Throwable $e
      */
-    private function logException(\Exception $e): void
+    private function logException(\Throwable $e): void
     {
         if (!$this->logger) {
             return;
