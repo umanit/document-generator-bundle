@@ -6,22 +6,16 @@ use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\HttpKernel\Kernel;
 
-/**
- * Class Configuration
- */
 class Configuration implements ConfigurationInterface
 {
-    /**
-     * {@inheritDoc}
-     */
     public function getConfigTreeBuilder(): TreeBuilder
     {
         if (3 <= Kernel::MAJOR_VERSION) {
             $treeBuilder = new TreeBuilder();
-            $root        = $treeBuilder->root('umanit_document_generator');
+            $root = $treeBuilder->root('umanit_document_generator');
         } else {
             $treeBuilder = new TreeBuilder('umanit_document_generator');
-            $root        = $treeBuilder->getRootNode();
+            $root = $treeBuilder->getRootNode();
         }
 
         $root

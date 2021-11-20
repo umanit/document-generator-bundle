@@ -2,74 +2,38 @@
 
 namespace Umanit\DocumentGeneratorBundle\Generator;
 
-use Http\Client\Common\HttpMethodsClient;
-use Http\Discovery\HttpClientDiscovery;
-use Http\Discovery\MessageFactoryDiscovery;
 use LogicException;
-use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Umanit\DocumentGeneratorBundle\Exception\DocumentGeneratorException;
 
-/**
- * Class DocumentGenerator
- */
 class DocumentGenerator
 {
-    /** @var string */
     private const AES_METHOD = 'aes-256-ctr';
-
-    /** @var string */
     private const GET_PNG = 'png';
-
-    /** @var string */
     private const GET_PDF = 'pdf';
-
-    /** @var string */
     private const FROM_URL = 'url';
-
-    /** @var string */
     private const FROM_HTML = 'html';
 
-    /** @var ClientInterface */
-    private $client;
+    private HttpClientInterface $client;
+    private string $apiBaseUri;
+    private bool $encryptData;
+    private ?string $encryptionKey;
+    private ?LoggerInterface $logger;
 
-    /** @var string */
-    private $apiBaseUri;
-
-    /** @var bool */
-    private $encryptData;
-
-    /** @var string|null */
-    private $encryptionKey;
-
-    /** @var LoggerInterface|null */
-    private $logger;
-
-    /**
-     * DocumentGenerator constructor.
-     *
-     * @param string               $apiBaseUri    Base URI of the API.
-     * @param string|null          $encryptionKey Key used to encrypt data if needed.
-     * @param LoggerInterface|null $logger
-     */
-    public function __construct(string $apiBaseUri, string $encryptionKey = null, LoggerInterface $logger = null)
-    {
-        $this->apiBaseUri    = rtrim($apiBaseUri, '/');
-        $this->encryptionKey = $encryptionKey;
-        $this->encryptData   = false;
-        $this->logger        = $logger;
-    }
-
-    /**
-     * Define a custom ClientInterface.
-     *
-     * @param ClientInterface|null $client
-     */
-    public function setClient(ClientInterface $client = null): void
-    {
+    public function __construct(
+        HttpClientInterface $client,
+        string $apiBaseUri,
+        string $encryptionKey = null,
+        LoggerInterface $logger = null
+    ) {
         $this->client = $client;
+        $this->apiBaseUri = rtrim($apiBaseUri, '/');
+        $this->encryptionKey = $encryptionKey;
+        $this->encryptData = false;
+        $this->logger = $logger;
     }
 
     /**
@@ -113,7 +77,7 @@ class DocumentGenerator
     }
 
     /**
-     * Generates a PDF from an URL.
+     * Generates a PDF from a URL.
      * Returns the binary string as a response.
      *
      * @param string $url     URL used to generate the document.
@@ -181,32 +145,30 @@ class DocumentGenerator
     private function generate(string $type, string $urlOrHtmlKey, string $urlOrHtmlValue, array $options = []): string
     {
         try {
-            $options     = $this->processOptions($options);
+            $options = $this->processOptions($options);
             $contentType = 'application/json';
-            $endpoint    = '/';
-            $message     = json_encode(array_merge($options, [
+            $endpoint = '/';
+            $message = json_encode(array_merge($options, [
                 'type'        => $type,
                 $urlOrHtmlKey => $urlOrHtmlValue,
-            ]));
+            ]), JSON_THROW_ON_ERROR);
 
             if ($this->encryptData) {
                 $contentType = 'text/plain';
-                $endpoint    = '/encrypted';
-                $message     = $this->encrypt($message);
+                $endpoint = '/encrypted';
+                $message = $this->encrypt($message);
             }
 
-            $client         = HttpClientDiscovery::find();
-            $messageFactory = MessageFactoryDiscovery::find();
-            $request        = $messageFactory->createRequest('POST', $this->getFullUrl($endpoint), [
-                'Content-Type' => $contentType,
-            ], $message);
-            $response       = $client->sendRequest($request);
+            $response = $this->client->request('POST', $this->getFullUrl($endpoint), [
+                'headers' => ['Content-Type' => $contentType],
+                'body'    => $message,
+            ]);
 
             if (200 !== $response->getStatusCode()) {
                 throw new DocumentGeneratorException('Invalid response code.');
             }
 
-            return $response->getBody()->getContents();
+            return $response->getContent();
         } catch (\Throwable $e) {
             $this->logException($e);
 
@@ -242,9 +204,15 @@ class DocumentGenerator
             throw new RuntimeException('Can not generate IV.');
         }
 
-        $ciphertext    = openssl_encrypt($message, self::AES_METHOD, $this->encryptionKey, OPENSSL_RAW_DATA, $iv);
+        $ciphertext = openssl_encrypt(
+            $message,
+            self::AES_METHOD,
+            $this->encryptionKey,
+            OPENSSL_RAW_DATA,
+            $iv
+        );
         $ciphertextHex = bin2hex($ciphertext);
-        $ivHex         = bin2hex($iv);
+        $ivHex = bin2hex($iv);
 
         return "$ivHex:$ciphertextHex";
     }
@@ -256,7 +224,7 @@ class DocumentGenerator
      */
     private function logException(\Throwable $e): void
     {
-        if (!$this->logger) {
+        if (null === $this->logger) {
             return;
         }
 
