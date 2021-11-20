@@ -7,12 +7,9 @@
         "php": "^7.4|^8.0",
         "ext-openssl": "*",
         "ext-json": "*",
-        "psr/http-message": "^1.0",
-        "php-http/httplug": "^2.0",
-        "php-http/message-factory": "^1.0",
-        "php-http/discovery": "^1.7",
         "symfony/framework-bundle": "^4.4|^5.2",
-        "symfony/options-resolver": "^4.4|^5.2"
+        "symfony/options-resolver": "^4.4|^5.2",
+        "symfony/http-client": "^5.3"
     },
     "provide": {
         "php-http/client-implementation": "^1.0"
